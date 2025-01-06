@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escáner QR con Botón</title>
+  <title>Escáner QR con Datos Estructurados</title>
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
@@ -34,6 +34,7 @@
     <div class="mt-4">
       <h2 class="text-center">Datos Detectados</h2>
       <div id="qr-result" class="alert alert-primary text-center">No hay datos escaneados.</div>
+      <ul id="qr-details" class="list-group mt-3"></ul>
       <button id="register-button" class="btn btn-success w-100 mt-3" disabled>Registrar Asistencia</button>
     </div>
   </div>
@@ -46,16 +47,43 @@
     const scanButton = document.getElementById('scan-button');
     const stopScanButton = document.getElementById('stop-scan-button');
     const qrResult = document.getElementById('qr-result');
+    const qrDetails = document.getElementById('qr-details');
     const registerButton = document.getElementById('register-button');
     const scannerModal = new bootstrap.Modal(document.getElementById('scannerModal'), {});
 
     let qrScanner;
 
     const onScanSuccess = (decodedText) => {
-      qrResult.textContent = `Datos: ${decodedText}`;
-      qrResult.classList.remove('alert-primary');
-      qrResult.classList.add('alert-success');
-      registerButton.disabled = false;
+      // Limpiar resultados previos
+      qrDetails.innerHTML = "";
+
+      try {
+        // Intentar analizar los datos como JSON
+        const parsedData = JSON.parse(decodedText);
+
+        // Mostrar los datos en forma de lista
+        Object.entries(parsedData).forEach(([key, value]) => {
+          const listItem = document.createElement('li');
+          listItem.className = "list-group-item";
+          listItem.innerHTML = `<strong>${key}:</strong> ${value}`;
+          qrDetails.appendChild(listItem);
+        });
+
+        qrResult.textContent = "Datos escaneados correctamente.";
+        qrResult.classList.remove('alert-primary');
+        qrResult.classList.add('alert-success');
+        registerButton.disabled = false;
+      } catch (e) {
+        // Si no es JSON, mostrar el texto tal cual
+        qrDetails.innerHTML = `
+          <li class="list-group-item">
+            <strong>Datos escaneados:</strong> ${decodedText}
+          </li>`;
+        qrResult.textContent = "Datos escaneados correctamente.";
+        qrResult.classList.remove('alert-primary');
+        qrResult.classList.add('alert-success');
+        registerButton.disabled = false;
+      }
 
       qrScanner.stop().then(() => console.log("Escáner detenido."));
       scannerModal.hide();
@@ -86,7 +114,7 @@
     stopScanButton.addEventListener('click', stopScanner);
 
     registerButton.addEventListener('click', () => {
-      alert(`Datos registrados: ${qrResult.textContent}`);
+      alert("Datos registrados correctamente.");
       registerButton.disabled = true;
     });
   </script>
